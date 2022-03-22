@@ -59,7 +59,7 @@ python save_change_training_dataset_to_disk.py --save_dir synthetic
 It will create the image pairs, flow fields, and change masks in save_dir/images, save_dir/flow, save_dir/mask respectively.
 The process can take a day or more, because the copy-paste is time consuming. Add ```--plot True``` to plot the generated samples as follows:
 
-![image](https://user-images.githubusercontent.com/10328020/159301476-138a9e01-bdfc-40fb-be1e-b38ce70b3245.png)
+![image](fig/synthetic_pair_39998.png)
 
 ### Downloadable Change Detection Datasets
 - Download the [ChangeSim Dataset](https://github.com/SAMMiCA/ChangeSim)
