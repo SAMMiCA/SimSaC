@@ -45,11 +45,11 @@ We use a combination of COCO, DPED, CityScapes, and ADE-20K datasets, where obje
 Download and put all the datasets (DPED, CityScapes, ADE-20K, COCO) in the same directory. The directory should be organized as follows:
 ```bash
 /source_datasets/
-            original_images/
-            CityScape/
-            CityScape_extra/
-            ADE20K_2016_07_26/
-            COCO/
+        original_images/
+        CityScape/
+        CityScape_extra/
+        ADEChallengeData2016/
+        coco/
 ```
 To generate the synthetic change detection dataset and save it to disk:
 ```bash
@@ -68,11 +68,11 @@ The process can take a day or more, because the copy-paste is time consuming. Ad
 Download and put all the datasets in the same directory. The directory should be organized ad follows: 
 ```bash
 /datasets/
-            ChangeSim/
-                  Query_Seq_Train/
-                  Query_Seq_Test/
-            VL-CMU-CD/
-            pcd_5cv/
+        ChangeSim/
+              Query_Seq_Train/
+              Query_Seq_Test/
+        VL-CMU-CD/
+        pcd_5cv/
 ```
 
 ### Imperfect Matches
