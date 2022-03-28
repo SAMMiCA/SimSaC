@@ -104,6 +104,9 @@ Here, the model is evaluated every 10-th epochs and the results are visualized e
 
 We heavily borrow code from public projects, such as [GLU-Net](https://github.com/PruneTruong/GLU-Net), [DGC-Net](https://github.com/AaltoVision/DGC-Net), [PWC-Net](https://github.com/NVlabs/PWC-Net), [NC-Net](https://github.com/ignacio-rocco/ncnet), [Flow-Net-Pytorch](https://github.com/ClementPinard/FlowNetPytorch)...
 
+This work was supported in part by the Institute of Information & communications Technology Planning & Evaluation (IITP) grant funded by Korean Government (MSIT) (No.2020-0-00440, Development of Artificial Intelligence Technology that Continuously Improves Itself as the Situation Changes
+in the Real World) and in part by the IITP grant funded by MSIT (No.2019-0-01842, Artificial Intelligence Graduate School Program (GIST)).
+
 
 ## License
 
@@ -121,7 +124,7 @@ The following is the BibTeX.
                Ue-Hwan Kim and
                Seon-Hoon Lee and
                Jong-Hwan Kim},
-  year = {2020},
+  year = {2022},
   booktitle = {2022 {IEEE} Conference on Computer Vision and Pattern Recognition, {CVPR} 2022}
 }
 ```
