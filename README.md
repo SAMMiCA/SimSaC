@@ -4,7 +4,7 @@ This is the official implementation of our paper: Dual Task Learning by Leveragi
 ![image](https://user-images.githubusercontent.com/10328020/159301196-30926aa7-dffd-40f2-a6d2-e9b00f44ec2c.png)
 
 ## Recent Updates (Under construction)
-- [x] Dataset download links (March 28, 2022)
+- [x] Imperfect match download links (March 28, 2022)
 - [ ] Training & evaluation scripts 
 - [ ] A demo script
  
@@ -65,18 +65,20 @@ The process can take a day or more, because the copy-paste is time consuming. Ad
 - Download the [ChangeSim Dataset](https://github.com/SAMMiCA/ChangeSim)
 - Download the [VL-CMU-CD Dataset](https://drive.google.com/file/d/0B-IG2NONFdciOWY5QkQ3OUgwejQ/view?resourcekey=0-rEzCjPFmDFjt4UMWamV4Eg)
 - Download the [PCD Dataset](https://github.com/kensakurada/sscdnet) (You need to contact the author of PCD for the access of the augmented PCD)
-Download and put all the datasets in the same directory. The directory should be organized ad follows: 
+
+Download and put all the datasets in the same directory. The directory should be organized as follows: 
 ```bash
 /datasets/
         ChangeSim/
               Query_Seq_Train/
-              Query_Seq_Test/
+              Query_Seq_Test/ 
         VL-CMU-CD/
         pcd_5cv/
 ```
 
 ### Imperfect Matches
- - Download the [imperfect matches](https://drive.google.com/file/d/19ZR1-d6o2pgcwlH20Z-OFGwxYdd_Wkzq/view?usp=sharing)
+ - Download the [imperfect matches](https://drive.google.com/file/d/19ZR1-d6o2pgcwlH20Z-OFGwxYdd_Wkzq/view?usp=sharing) and put all the txt files in the same directory named ```imperfect_matches```. 
+ - Each line of the txt files represents a sample, in the format of reference image path, query image path, ground-truth path, and match validity (1 or 0).
 
 ## Training & Evaluation
 
