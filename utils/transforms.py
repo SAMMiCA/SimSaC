@@ -1,6 +1,11 @@
+from __future__ import division
 import torch
+import torch.nn.functional
+import random
 import numpy as np
-import torch.nn.functional as F
+import numbers
+import torchvision.transforms.functional as F
+import scipy.ndimage as ndimage
 
 
 def TensorToArray(tensor, type):
@@ -38,7 +43,6 @@ class ArrayToTensor(object):
 
 
 class ResizeFlow(object):
-    """Converts a numpy.ndarray (H x W x C) to a torch.FloatTensor of shape (C x H x W)."""
     def __init__(self, size):
         if not isinstance(size, tuple):
             size = (size, size)
@@ -47,7 +51,7 @@ class ResizeFlow(object):
     def __call__(self, tensor):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         _, h_original, w_original = tensor.shape
-        resized_tensor = F.interpolate(tensor.unsqueeze(0), self.size, mode='bilinear', align_corners=False)
+        resized_tensor = torch.nn.functional.interpolate(tensor.unsqueeze(0), self.size, mode='bilinear', align_corners=False)
         resized_tensor[:, 0, :, :] *= float(self.size[1])/float(w_original)
         resized_tensor[:, 1, :, :] *= float(self.size[0])/float(h_original)
         return resized_tensor.squeeze(0)

@@ -17,6 +17,8 @@ import albumentations as A
 from utils.copy_paste import CopyPaste
 from utils.coco import CocoDetectionCP
 import random
+from torchvision.transforms.transforms import Compose
+import utils.transforms_flow as trans_flow
 
 def unormalise_and_convert_mapping_to_flow(map, output_channel_first=True):
 
@@ -218,6 +220,7 @@ class HomoAffTps_Dataset(Dataset):
             '../dataset/coco/annotations/instances_train2014.json'
         )
 
+        # foreground object (from coco) transforms
         self.rescale_transform = A.Compose([
             A.LongestMaxSize(max_size=200)
         ])
@@ -228,6 +231,13 @@ class HomoAffTps_Dataset(Dataset):
             A.Transpose(p=0.6)
         ])
 
+        # co-transforms (simultaneous transform of flow, ref-img, query-img, ref-mask, and  query-mask)
+        self.co_transform = Compose([
+            trans_flow.ToTensorCHW(),
+            trans_flow.RandomHorizontalFlip(),
+            trans_flow.RandomVerticalFlip(),
+            trans_flow.ToHWC(),
+        ])
     def transform_image(self,
                         image,
                         out_h,
@@ -357,12 +367,14 @@ class HomoAffTps_Dataset(Dataset):
             raise ValueError("The path to one of the original image {} does not exist, check your image path "
                              "and your csv file !".format(source_img_name))
         print('[{}/{}] SOURCE IMG PATH: {}'.format(idx,len(self.df),source_img_name))
-        return_dict = dict(transform_type=transform_type)
-        return_dict.update({'image': {'ref': {}, 'query': {}},
+
+        # return format
+        return_dict={'static': {},'new':{},'missing':{},'replaced':{},'moved':{}}
+        for key, value in return_dict.items():
+            return_dict[key].update({'image': {'ref': {}, 'query': {}},
                             'mask': {'ref': {}, 'query': {}},
-                            'flow':{},
-                            'corr_mask':{}}
-                           )
+                            'flow':{}})
+
         # aff/tps transformations
         if transform_type == 0 or transform_type == 1:
             # prepare thetas
@@ -587,11 +599,17 @@ class HomoAffTps_Dataset(Dataset):
                 else:
                     raise ValueError
 
-                return_dict['flow'][change_type] = flow
-                return_dict['image']['ref'][change_type] = self.to_tensor_hwc_format(img_src_crop)
-                return_dict['image']['query'][change_type] = self.to_tensor_hwc_format(img_tgt_crop)
-                return_dict['mask']['ref'][change_type] = self.to_tensor_hwc_format(mask_src_crop)
-                return_dict['mask']['query'][change_type] = self.to_tensor_hwc_format(mask_tgt_crop)
+                return_dict[change_type]['flow'] = flow
+                return_dict[change_type]['image']['ref'] = img_src_crop
+                return_dict[change_type]['image']['query'] =img_tgt_crop
+                return_dict[change_type]['mask']['ref'] = mask_src_crop
+                return_dict[change_type]['mask']['query'] = mask_tgt_crop
+
+                return_dict[change_type] = self.co_transform(return_dict[change_type])
+                # return_dict[change_type]['image']['ref'] = self.to_tensor_hwc_format(img_src_crop)
+                # return_dict[change_type]['image']['query'] = self.to_tensor_hwc_format(img_tgt_crop)
+                # return_dict[change_type]['mask']['ref'] = self.to_tensor_hwc_format(mask_src_crop)
+                # return_dict[change_type]['mask']['query'] = self.to_tensor_hwc_format(mask_tgt_crop)
 
         # Homography transformation
         elif transform_type == 2:
@@ -732,11 +750,19 @@ class HomoAffTps_Dataset(Dataset):
                 else:
                     raise ValueError
 
-                return_dict['flow'][change_type] = flow
-                return_dict['image']['ref'][change_type] = self.to_tensor_hwc_format(img_src_crop)
-                return_dict['image']['query'][change_type] = self.to_tensor_hwc_format(img_tgt_crop)
-                return_dict['mask']['ref'][change_type] = self.to_tensor_hwc_format(mask_src_crop)
-                return_dict['mask']['query'][change_type] = self.to_tensor_hwc_format(mask_tgt_crop)
+                return_dict[change_type]['flow'] = flow
+                return_dict[change_type]['image']['ref'] = img_src_crop
+                return_dict[change_type]['image']['query'] = img_tgt_crop
+                return_dict[change_type]['mask']['ref'] = mask_src_crop
+                return_dict[change_type]['mask']['query'] = mask_tgt_crop
+
+                return_dict[change_type] = self.co_transform(return_dict[change_type])
+                # return_dict[change_type]['image']['ref'] = self.to_tensor_hwc_format(img_src_crop)
+                # return_dict[change_type]['image']['query'] = self.to_tensor_hwc_format(img_tgt_crop)
+                # return_dict[change_type]['mask']['ref'] = self.to_tensor_hwc_format(mask_src_crop)
+                # return_dict[change_type]['mask']['query'] = self.to_tensor_hwc_format(mask_tgt_crop)
+
+
 
         else:
             print('Error: transformation type')
