@@ -1,32 +1,29 @@
-
 import os
 import numpy as np
 import argparse
 import random
 from utils.io import boolean_string
 import torch
-from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 from datasets.training_dataset import HomoAffTps_Dataset
 from utils.pixel_wise_mapping import remap_using_flow_fields
 from matplotlib import pyplot as plt
-from tqdm import tqdm
-import imageio
 from utils.image_transforms import ArrayToTensor
 from utils.io import writeFlow
 import flow_vis
 from PIL import Image
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Change Detection Dataset Generation script')
     parser.add_argument('--image_data_path', type=str, default = '../dataset',
                         help='path to directory containing the original images.')
     parser.add_argument('--csv_path', type=str, default='datasets/csv_files/homo_aff_tps_train_DPED_CityScape_ADE.csv',
-                        help='path to the CSV files')
+                        help='path to the CSV files containing warping params')
     parser.add_argument('--save_dir', type=str, default = '../dataset/synthetic',
-                        help='path directory to save the image pairs and corresponding ground-truth flows')
+                        help='path directory to save the image pairs, ground-truth flows, and change masks')
     parser.add_argument('--plot', default=False, type=boolean_string,
-                        help='plot as examples the first 4 pairs ? default is False')
+                        help='if true, visualize the generalized samples')
     parser.add_argument('--seed', type=int, default=1981,
                         help='Pseudo-RNG seed')
 
@@ -36,7 +33,6 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
 
     plot = args.plot
     save_dir = args.save_dir
@@ -51,7 +47,7 @@ if __name__ == "__main__":
         os.makedirs(viz_dir)
     data_types = ['image','mask']
     img_types = ['ref','query']
-    change_names = ['static','new','missing','replaced','rotated']
+    change_names = ['static','new','missing','replaced','moved']
     change_dirs = {'image':{'ref':{},'query':{}},
                    'mask':{'ref':{},'query':{}},
                    'flow':{}}
@@ -66,7 +62,7 @@ if __name__ == "__main__":
                 change_dir = os.path.join(img_type_dir,change_name)
                 if not os.path.exists(change_dir): os.makedirs(change_dir)
                 change_dirs[data_type][img_type][change_name] = change_dir
-    for change_name in ('static','rotated'):
+    for change_name in ('static','moved'):
         change_dir = os.path.join(flow_dir, change_name)
         if not os.path.exists(change_dir): os.makedirs(change_dir)
         change_dirs['flow'][change_name] = change_dir
@@ -101,7 +97,7 @@ if __name__ == "__main__":
                             im = Image.fromarray(save_data.numpy().astype('uint8'))
                             im.save(save_filepath)
 
-                for change_name in ('static', 'rotated'):
+                for change_name in ('static', 'moved'):
                     save_data = minibatch['flow'][change_name]
                     save_path = change_dirs['flow'][change_name]
                     # save flow
@@ -127,11 +123,11 @@ if __name__ == "__main__":
                         axis[change_idx][4].set_title('{}'.format('flow'))
 
                         ref_img = minibatch['image']['ref'][change_name].numpy().astype('uint8') # h,w,3
-                        mask = minibatch['mask'] if change_name == 'rotated' else None
+                        mask = minibatch['mask'] if change_name == 'moved' else None
                         remapped_gt = remap_using_flow_fields(ref_img, flow_gt[:, :, 0], flow_gt[:, :, 1],
                                                               mask=mask)
                         axis[change_idx][5].imshow(remapped_gt)
-                        axis[change_idx][5].set_title('{}'.format('Warped ref (w.r.t. GT flow)'))
+                        axis[change_idx][5].set_title('{}'.format('warped ref (w.r.t. GT flow)'))
                     fig.savefig(os.path.join(viz_dir, 'synthetic_pair_{}'.format(i)), bbox_inches='tight')
                     plt.close(fig)
 

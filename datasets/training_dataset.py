@@ -222,7 +222,7 @@ class HomoAffTps_Dataset(Dataset):
             A.LongestMaxSize(max_size=200)
         ])
         self.rotate_transform = A.Compose([
-            A.SafeRotate(limit=360,mask_value=0,p=0.7,border_mode=cv2.BORDER_CONSTANT),
+            A.SafeRotate(limit=360, mask_value=0, p=0.7, border_mode=cv2.BORDER_CONSTANT),
             A.HorizontalFlip(p=0.6),
             A.VerticalFlip(p=0.6),
             A.Transpose(p=0.6)
@@ -365,13 +365,13 @@ class HomoAffTps_Dataset(Dataset):
                            )
         # aff/tps transformations
         if transform_type == 0 or transform_type == 1:
-            # prepare theta
-            theta = self.prepare_theta(data,transform_type)
-            theta_extra = self.prepare_extra_theta(transform_type)
+            # prepare thetas
+            theta = self.prepare_theta(data,transform_type) # for background
+            theta_extra = self.prepare_extra_theta(transform_type) # for foreground
             # read image
             source_img = cv2.cvtColor(cv2.imread(source_img_name),
                                       cv2.COLOR_BGR2RGB)
-            # cropping dimention of the image first if it is too big, would occur to big resizing after
+            # cropping dimension of the image first if it is too big, would occur to big resizing after
             if source_img.shape[0] > self.H_AFF_TPS*self.ratio_cropping or \
                     source_img.shape[1] > self.W_AFF_TPS*self.ratio_cropping:
                 source_img, x, y = center_crop(source_img, (int(self.W_AFF_TPS*self.ratio_cropping),
@@ -391,7 +391,7 @@ class HomoAffTps_Dataset(Dataset):
             image_pad = torch.FloatTensor(pasted['image']).permute(2,0,1) # c,h,w
             flow, correspondence_mask = self.get_flow(transform_type, theta)
 
-            for change_type in ['static','new','missing','replaced','rotated']:
+            for change_type in ['static','new','missing','replaced','moved']:
                 # prepare both paste-applied & original
                 original_img = image_pad
                 paste_applied, mask1 = self.copy_paste(original_img, idx, num_min_pixel=10000, num_max_pixel=100000)
@@ -408,6 +408,7 @@ class HomoAffTps_Dataset(Dataset):
                                              padding_factor=0.8,
                                              crop_factor=9 / 16).squeeze()
                     img_src_crop, mask_src_crop = torch.split(img_src_crop,3,dim=0)
+                    mask_src_crop = torch.zeros_like(mask_src_crop)
                     # Target img
                     img_tgt_crop = \
                         self.transform_image(original_img_with_mask[None,...],
@@ -438,9 +439,6 @@ class HomoAffTps_Dataset(Dataset):
                                              theta=theta).squeeze()
                     img_tgt_crop, mask_tgt_crop = torch.split(img_tgt_crop,3,dim=0)
 
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
-
                 elif change_type == 'missing':
                     # Source img
                     img_src_crop = \
@@ -459,9 +457,6 @@ class HomoAffTps_Dataset(Dataset):
                                              crop_factor=9 / 16,
                                              theta=theta).squeeze()
                     img_tgt_crop, mask_tgt_crop = torch.split(img_tgt_crop, 3, dim=0)
-
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
 
                 elif change_type == 'replaced':
                     # sample source object thumbnail, then transform it
@@ -517,10 +512,8 @@ class HomoAffTps_Dataset(Dataset):
                     mask_tgt_crop = self.inFill(mask_tgt_crop) # convert (h,w) into (h,w,3)
                     mask_src_crop = self.inFill(mask_src_crop) # convert (h,w) into (h,w,3)
 
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
 
-                elif change_type == 'rotated':
+                elif change_type == 'moved':
                     obj_src_dict = self.extract_obj_from_COCO()
                     obj_src_dict = self.rescale_transform(**obj_src_dict)
                     (src_h, src_w, c) = obj_src_dict['image'].shape
@@ -591,9 +584,6 @@ class HomoAffTps_Dataset(Dataset):
                     mask_src_crop = self.inFill(mask_src_crop) # convert (h,w) into (h,w,3)
                     flow = torch.where(torch.BoolTensor(mask_tgt_crop[:,:,0]),obj_flow,flow)
 
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
-
                 else:
                     raise ValueError
 
@@ -625,7 +615,7 @@ class HomoAffTps_Dataset(Dataset):
             # Obtaining the full and crop grids out of H
             grid_full, grid_crop = self.get_grid(theta, ccrop=(x1_crop, y1_crop))
 
-            for change_type in ['static','new','missing','replaced','rotated']:
+            for change_type in ['static','new','missing','replaced','moved']:
                 # prepare both paste-applied & original
                 # img_src_crop = torch.FloatTensor(img_src_crop).permute(2,0,1) # c,h,w
                 paste_applied, mask_src_crop = self.copy_paste(img_src_crop, idx, num_min_pixel=10000, num_max_pixel=100000)
@@ -660,9 +650,6 @@ class HomoAffTps_Dataset(Dataset):
                                                                self.W_OUT) # 520,520,2c
                     img_tgt_crop, mask_tgt_crop = img_tgt_crop_with_mask[:,:,:3], img_tgt_crop_with_mask[:,:,3:]
 
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
-
                 elif change_type == 'missing':
                     img_src_crop = paste_applied['image'].copy()
                     img_orig_tgt_vrbl_with_mask, _ = self.Homography_transform(original_img_with_mask,
@@ -670,9 +657,6 @@ class HomoAffTps_Dataset(Dataset):
                     img_tgt_crop_with_mask, _, _ = center_crop(img_orig_tgt_vrbl_with_mask.permute(1,2,0).numpy(),
                                                                self.W_OUT) # 520,520,2c
                     img_tgt_crop, mask_tgt_crop = img_tgt_crop_with_mask[:,:,:3], img_tgt_crop_with_mask[:,:,3:]
-
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
 
                 elif change_type == 'replaced':
                     # sample source object thumbnail, then rescale it
@@ -698,11 +682,7 @@ class HomoAffTps_Dataset(Dataset):
                     mask_tgt_crop = self.inFill(mask_tgt_crop) # convert (h,w) into (h,w,3)
                     mask_src_crop = self.inFill(mask_src_crop) # convert (h,w) into (h,w,3)
 
-
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
-
-                elif change_type == 'rotated':
+                elif change_type == 'moved':
                     obj_src_dict = self.extract_obj_from_COCO()
                     obj_src_dict = self.rescale_transform(**obj_src_dict)
                     (src_h, src_w, c) = obj_src_dict['image'].shape
@@ -711,7 +691,7 @@ class HomoAffTps_Dataset(Dataset):
                         torch.FloatTensor(obj_src_dict['masks'][0])[None,...]],dim=0)
                     obj_img, obj_mask = obj_img_with_mask[:,:,:3], obj_img_with_mask[:,:,3]
 
-                    # rotated obj thumbnail
+                    # moved obj thumbnail
                     transform_type_extra = random.randint(0,1)
                     theta_extra = self.prepare_extra_theta(transform_type=transform_type_extra)
                     src_obj_img_with_mask, xy = self.paste_from_cropped_obj(img_src_orig,obj_dict=obj_src_dict)
@@ -749,13 +729,6 @@ class HomoAffTps_Dataset(Dataset):
                     obj_flow,_ = self.get_flow(transform_type_extra,theta_extra)
                     flow = torch.where(torch.BoolTensor(mask_tgt_crop[:,:,0]),obj_flow,bg_flow)
 
-                    #img_tgt_crop, mask_tgt_crop = img_tgt_crop_with_mask[:,:,:3], img_tgt_crop_with_mask[:,:,3]
-
-
-
-                    self.viz_change_aug(img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                                        change_type,transform_type,idx,show=False)
-
                 else:
                     raise ValueError
 
@@ -768,10 +741,6 @@ class HomoAffTps_Dataset(Dataset):
         else:
             print('Error: transformation type')
             raise ValueError
-
-        # # if transform_type in (0,1): grid_crop = None
-        # # flow, correspondence_mask = self.get_flow(transform_type,theta,grid_crop)
-        # return_dict.update(correspondence_mask=correspondence_mask)
 
         return return_dict
 
@@ -1053,33 +1022,6 @@ class HomoAffTps_Dataset(Dataset):
                 mask_orig_target_vrbl = None
 
         return img_orig_target_vrbl.squeeze(), mask_orig_target_vrbl
-
-    def viz_change_aug(self,img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop,
-                       change_type,transform_type,idx,show=False,save=False):
-        if show + save > 0:
-            plot_idx = 141
-            plt.clf()
-            plt.close()
-            plt.figure(figsize=(12, 3))
-            plt.suptitle('{}_{}_{}'.format(idx,change_type,transform_type))
-            for img in [img_src_crop,img_tgt_crop,mask_src_crop,mask_tgt_crop]:
-                if isinstance(img,torch.Tensor):
-                    if len(img.shape) ==3:
-                        img = img.permute(1,2,0).numpy()
-                    elif len(img.shape) ==2:
-                        img = img.numpy()
-                    else:
-                        raise ValueError
-                ax = plt.subplot(plot_idx)
-                plt.imshow(img.astype('uint8'))
-                plot_idx+=1
-
-            if show:
-                plt.show()
-            if save:
-                plt.savefig('visualize/{}/{}.png'.format(change_type, idx))
-
-        #
 
     def prepare_theta(self,data,transform_type):
         # prepare theta

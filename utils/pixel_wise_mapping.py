@@ -25,21 +25,13 @@ def remap_using_flow_fields(image, disp_x, disp_y, interpolation=cv2.INTER_LINEA
     map_x = (X+disp_x).astype(np.float32)
     map_y = (Y+disp_y).astype(np.float32)
     if mask is not None:
-        ref_mask =mask['ref']['rotated']
-        query_mask = mask['query']['rotated']
+        ref_mask =mask['ref']['moved']
+        query_mask = mask['query']['moved']
 
         obj_removed_img = (~ref_mask.bool()).numpy() * image.copy()
         remapped_image_without_obj = cv2.remap(obj_removed_img, map_x, map_y, interpolation=interpolation, borderMode=border_mode)
         obj_only_img = (ref_mask.bool()).numpy() * image.copy()
         remapped_mask = cv2.remap(ref_mask.float().numpy(),map_x,map_y,interpolation,border_mode)
-        # import matplotlib.pyplot as plt
-        # plt.figure(2)
-        # plt.subplot(121)
-        # plt.imshow(query_mask.numpy())
-        # plt.subplot(122)
-        # plt.imshow(remapped_mask)
-        # plt.show()
-        # plt.figure(1)
         remapped_image_only_obj = cv2.remap(obj_only_img, map_x, map_y, interpolation=interpolation, borderMode=border_mode)
         # remapped_image = (remapped_mask.astype('bool')) * remapped_image_only_obj \
         #              + (1-remapped_mask.astype('bool')) * remapped_image_without_obj
