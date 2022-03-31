@@ -5,6 +5,7 @@ This is the official implementation of our paper: Dual Task Learning by Leveragi
 
 ## Recent Updates (Under construction)
 - [x] Imperfect match download links (March 28, 2022)
+- [x] A synthetic dataset generation script (March 31, 2022)
 - [ ] Training & evaluation scripts 
 - [ ] A demo script
  
