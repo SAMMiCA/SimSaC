@@ -172,7 +172,8 @@ class HomoAffTps_Dataset(Dataset):
                  transforms_target=None,
                  get_flow=False,
                  pyramid_param=[520],
-                 output_size=(520,520)):
+                 output_size=(520,520),
+                 start_idx = 0):
         super().__init__()
         self.img_path = image_path
         if not os.path.isdir(self.img_path):
@@ -238,6 +239,8 @@ class HomoAffTps_Dataset(Dataset):
             trans_flow.RandomVerticalFlip(),
             trans_flow.ToHWC(),
         ])
+        self.start_idx = start_idx
+
     def transform_image(self,
                         image,
                         out_h,
@@ -351,9 +354,10 @@ class HomoAffTps_Dataset(Dataset):
         return image_batch
 
     def __len__(self):
-        return len(self.df)
+        return len(self.df) - self.start_idx
 
     def __getitem__(self, idx):
+        idx += self.start_idx
         data = self.df.iloc[idx]
         # get the transformation type flag
         transform_type = data['aff/tps/homo'].astype('uint8')
@@ -872,7 +876,7 @@ class HomoAffTps_Dataset(Dataset):
                 # Filter out too big/small masks
                 coco_crop, num_bbox = self.filter_by_size_and_ratio(**coco_crop)
                 if num_bbox == 0:
-                    print("[{}/{}] No mask remaining. trying new one...".format(idx, self.__len__()))
+                    print("[{}/{}] No mask remaining. trying new one...".format(idx, len(self.df)))
                     continue
 
                 # Do copy-paste
@@ -884,17 +888,17 @@ class HomoAffTps_Dataset(Dataset):
                 mask = sum(pasted['masks']).astype('bool').astype('uint8')
             except Exception as e:
                 print(e)
-                print("[{}/{}] error occurred. trying new one...".format(idx, self.__len__()))
+                print("[{}/{}] error occurred. trying new one...".format(idx, len(self.df)))
                 continue
             if np.sum(mask) < num_min_pixel:
-                print("[{}/{}] mask too small. trying new one...".format(idx, self.__len__()))
+                print("[{}/{}] mask too small. trying new one...".format(idx, len(self.df)))
                 continue
             elif np.sum(mask) > num_max_pixel:
-                print("[{}/{}] mask too big. trying new one...".format(idx, self.__len__()))
+                print("[{}/{}] mask too big. trying new one...".format(idx, len(self.df)))
                 continue
             else:
                 # proper mask !
-                print("[{}/{}] copy&paste successful".format(idx, self.__len__()))
+                print("[{}/{}] copy&paste successful".format(idx, len(self.df)))
                 mask = np.tile(mask[:, :, None], (1, 1, 3)) * 255  # grayscale [0,1] to RGB [0,255]
                 break
 
@@ -1074,7 +1078,7 @@ class HomoAffTps_Dataset(Dataset):
         if transform_type == 0:
             Flag = -1
             while Flag != transform_type:
-                data_extra = self.df.iloc[random.randint(0, self.__len__() - 1)]
+                data_extra = self.df.iloc[random.randint(0, len(self.df) - 1)]
                 Flag = data_extra['aff/tps/homo'].astype('uint8')
             theta_extra = data_extra.iloc[2:8].values.astype('float').reshape(2, 3)
             theta_extra = torch.Tensor(theta_extra.astype(np.float32)).expand(1, 2, 3)
@@ -1082,7 +1086,7 @@ class HomoAffTps_Dataset(Dataset):
         elif transform_type == 1:
             Flag = -1
             while Flag != transform_type:
-                data_extra = self.df.iloc[random.randint(0, self.__len__() - 1)]
+                data_extra = self.df.iloc[random.randint(0, len(self.df) - 1)]
                 Flag = data_extra['aff/tps/homo'].astype('uint8')
             theta_extra = data_extra.iloc[2:].values.astype('float')
             theta_extra = np.expand_dims(np.expand_dims(theta_extra, 1), 2)
@@ -1092,7 +1096,7 @@ class HomoAffTps_Dataset(Dataset):
         elif transform_type == 2:
             Flag = -1
             while Flag !=2:
-                data_extra = self.df.iloc[random.randint(0, self.__len__() - 1)]
+                data_extra = self.df.iloc[random.randint(0, len(self.df) - 1)]
                 Flag = data_extra['aff/tps/homo'].astype('uint8')
             # ATTENTION CV2 resize is inverted, first w and then h
             theta_extra = data_extra.iloc[2:11].values.astype('double').reshape(3, 3)

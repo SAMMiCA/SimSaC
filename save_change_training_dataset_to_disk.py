@@ -25,7 +25,9 @@ if __name__ == "__main__":
                         help='path directory to save the image pairs, ground-truth flows, and change masks')
     parser.add_argument('--plot', default=False, type=boolean_string,
                         help='if true, visualize the generalized samples')
-    parser.add_argument('--seed', type=int, default=1981,
+    parser.add_argument('--resume_idx', type=int, default=0,
+                        help='resume from this index')
+    parser.add_argument('--seed', type=int, default=1992,
                         help='Pseudo-RNG seed')
 
     args = parser.parse_args()
@@ -67,8 +69,6 @@ if __name__ == "__main__":
         change_dir = os.path.join(flow_dir, change_name)
         if not os.path.exists(change_dir): os.makedirs(change_dir)
         change_dirs['flow'][change_name] = change_dir
-    # for change_name in ('missing','new','replaced'):
-    #     os.system('ln -s '+os.path.join(flow_dir,'static')+' '+os.path.join(flow_dir,change_name))
 
     # datasets
     source_img_transforms = transforms.Compose([ArrayToTensor(get_float=False)])
@@ -82,9 +82,10 @@ if __name__ == "__main__":
                                        transforms_target=target_img_transforms,
                                        pyramid_param=pyramid_param,
                                        get_flow=True,
-                                       output_size=(520, 520))
+                                       output_size=(520, 520),
+                                       start_idx = args.resume_idx)
 
-    for i, minibatch in enumerate(train_dataset):
+    for i, minibatch in enumerate(train_dataset, start=args.resume_idx):
         SAVE_SUCCESSFUL = False
         while SAVE_SUCCESSFUL == False:
             try:
