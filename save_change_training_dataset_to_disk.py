@@ -13,7 +13,10 @@ from utils.io import writeFlow
 import flow_vis
 from PIL import Image
 import gc
-
+from pathlib import Path
+from glob import glob
+from natsort import natsorted
+resume_idx = glob('.datagen_ckpt_*')
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Change Detection Dataset Generation script')
@@ -25,7 +28,8 @@ if __name__ == "__main__":
                         help='path directory to save the image pairs, ground-truth flows, and change masks')
     parser.add_argument('--plot', default=False, type=boolean_string,
                         help='if true, visualize the generalized samples')
-    parser.add_argument('--resume_idx', type=int, default=0,
+    parser.add_argument('--resume_idx', type=int,
+                        default=int(natsorted(glob('.datagen_ckpt_*'))[-1].split('_')[-1])+1 if len(glob('.datagen_ckpt_*'))>0 else 0,
                         help='resume from this index')
     parser.add_argument('--seed', type=int, default=1992,
                         help='Pseudo-RNG seed')
@@ -136,7 +140,13 @@ if __name__ == "__main__":
                     fig.savefig(os.path.join(viz_dir, 'synthetic_pair_{}'.format(i)), bbox_inches='tight')
                     plt.close(fig)
 
+                if len(glob(".datagen_ckpt_*")) > 0:
+                    for path in glob(".datagen_ckpt_*"):
+                        os.remove(path)
+                Path(".datagen_ckpt_{}".format(str(i))).touch()
+
                 SAVE_SUCCESSFUL = True
+                print("[{}/{}] SAVED".format(i, len(train_dataset.df)))
                 gc.collect() # release unreferenced memory
             except Exception as e:
                 print(e)
