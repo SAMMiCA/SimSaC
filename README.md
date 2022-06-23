@@ -99,7 +99,8 @@ python train.py \
 Here, the model is evaluated every 10-th epochs and the results are visualized every 10-th batches of the evaluation.
 
 ![image](https://user-images.githubusercontent.com/10328020/159301703-7dc9a7b1-aeab-4621-b533-04a1c1899690.png)
-![cmu_1](figs/cmu_1.gif)
+
+For more results, see [results](fig/results.md).
 
 ## Acknowledgement
 
