@@ -1,5 +1,4 @@
-[legend](fig/legend.png)
-
+![legend](fig/legend.png)
 ![cmu_1](fig/cmu_1.gif)
 ![cmu_2](fig/cmu_2.gif)
 ![cmu_3](fig/cmu_3.gif)
