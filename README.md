@@ -36,7 +36,7 @@ pip install cupy-cuda111 --no-cache-dir
 ## Pretrained models
 
 Download the following pretrained model and place it under the root directory.
-- [pretrained_models](TBU)
+- [pretrained_models](https://drive.google.com/drive/folders/119FRNCyrIXxxYrZi-_kbGrGFiQ1MSkAG?usp=sharing)
 
 
 ## Data Preparation
@@ -100,6 +100,7 @@ Here, the model is evaluated every 10-th epochs and the results are visualized e
 
 ![image](https://user-images.githubusercontent.com/10328020/159301703-7dc9a7b1-aeab-4621-b533-04a1c1899690.png)
 
+For more results, see [results](fig/results.md).
 
 ## Acknowledgement
 
