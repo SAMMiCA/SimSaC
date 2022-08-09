@@ -36,7 +36,7 @@ pip install cupy-cuda111 --no-cache-dir
 ## Pretrained models
 
 Download the following pretrained model and place it under the root directory.
-- [pretrained_models](TBU)
+- [pretrained_models](https://drive.google.com/drive/folders/119FRNCyrIXxxYrZi-_kbGrGFiQ1MSkAG?usp=sharing)
 
 
 ## Data Preparation
